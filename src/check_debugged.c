@@ -4,18 +4,30 @@
 
 #pragma comment(lib, "ntdll.lib")
 
-BOOL CheckDebuggedUsingPEB() {
+// Checks the BeingDebugged flag of the PEB
+BOOL UsingPEB() {
     
     // Get the address of the PEB
     PEB* peb = (PEB*)__readgsqword(0x60);
-
     return peb->BeingDebugged;
 }
 
-BOOL CheckDebuggedUsingAPI() {
+// Checks using the CheckRemoteDebuggerPresent winapi call
+BOOL UsingCheckRemoteDebuggerPresent() {
     BOOL isDebuggerPresent = FALSE;
     CheckRemoteDebuggerPresent(GetCurrentProcess(), &isDebuggerPresent);
     return isDebuggerPresent;
+}
+
+// Checks using the IsDebuggerPresent winapi call
+BOOL UsingIsDebuggerPresent() {
+    return IsDebuggerPresent();
+}
+
+BOOL UsingNtQueryInformationProcess() {
+    DWORD debugFlag = 0;
+    NtQueryInformationProcess(GetCurrentProcess(), ProcessDebugPort, &debugFlag, sizeof(debugFlag), NULL);
+    return debugFlag != 0;
 }
 
 int main(int argc, char* argv[]) {
@@ -24,6 +36,8 @@ int main(int argc, char* argv[]) {
         printf("Method numbers:\n");
         printf("1 - PEB method\n");
         printf("2 - CheckRemoteDebuggerPresent method\n");
+        printf("3 - IsDebuggerPresent method\n");
+        printf("4 - NtQueryInformationProcess method\n");
         return 1;
     }
 
@@ -32,10 +46,16 @@ int main(int argc, char* argv[]) {
 
     switch (method) {
         case 1:
-            isDebuggerPresent = CheckDebuggedUsingPEB();
+            isDebuggerPresent = UsingPEB();
             break;
         case 2:
-            isDebuggerPresent = CheckDebuggedUsingAPI();
+            isDebuggerPresent = UsingCheckRemoteDebuggerPresent();
+            break;
+        case 3:
+            isDebuggerPresent = UsingIsDebuggerPresent();
+            break;
+        case 4:
+            isDebuggerPresent = UsingNtQueryInformationProcess();
             break;
         default:
             printf("Invalid method number. Use 1 or 2.\n");
@@ -43,9 +63,9 @@ int main(int argc, char* argv[]) {
     }
 
     if (isDebuggerPresent) {
-        printf("The process is being debugged (method %d).\n", method);
+        printf("The process is being debugged.\n", method);
     } else {
-        printf("The process is not being debugged (method %d).\n", method);
+        printf("The process is not being debugged.\n", method);
     }
 
     return 0;
