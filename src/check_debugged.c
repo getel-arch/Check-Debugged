@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
         printf("2 - CheckRemoteDebuggerPresent method\n");
         printf("3 - IsDebuggerPresent method\n");
         printf("4 - NtQueryInformationProcess method\n");
-        return 1;
+        return FALSE;
     }
 
     int method = atoi(argv[1]);
@@ -59,7 +59,7 @@ int main(int argc, char* argv[]) {
             break;
         default:
             printf("Invalid method number. Use 1 or 2.\n");
-            return 1;
+            return FALSE;
     }
 
     if (isDebuggerPresent) {
@@ -68,5 +68,5 @@ int main(int argc, char* argv[]) {
         printf("The process is not being debugged.\n", method);
     }
 
-    return 0;
+    return TRUE;
 }
