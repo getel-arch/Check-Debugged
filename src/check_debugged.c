@@ -24,6 +24,8 @@ BOOL UsingIsDebuggerPresent() {
     return IsDebuggerPresent();
 }
 
+// Checks using the NtQueryInformationProcess winapi call and passing the ProcessInformationClass 'ProcessDebugPort'
+// which returns nozero value when the process is being debugged by a ring 3 debugger
 BOOL UsingNtQueryInformationProcess() {
     DWORD debugFlag = 0;
     NtQueryInformationProcess(GetCurrentProcess(), ProcessDebugPort, &debugFlag, sizeof(debugFlag), NULL);
