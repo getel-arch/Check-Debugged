@@ -18,7 +18,7 @@ BOOL CheckDebuggedUsingAPI() {
     return isDebuggerPresent;
 }
 
-int main() {
+int main(int argc, char* argv[]) {
     if (argc != 2) {
         printf("Usage: %s <method_number>\n", argv[0]);
         printf("Method numbers:\n");
