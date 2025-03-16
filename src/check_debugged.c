@@ -33,7 +33,7 @@ BOOL UsingNtQueryInformationProcess() {
 }
 
 BOOL UsingDebugActiveProcess() {
-    return !DebugActiveProcess(GetCurrentProcessId());
+    return DebugActiveProcess(GetCurrentProcessId());
 }
 
 int main(int argc, char* argv[]) {
