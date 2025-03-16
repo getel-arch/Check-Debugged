@@ -76,11 +76,7 @@ int main(int argc, char* argv[]) {
     }
 
     if (isDebuggerPresent) {
-        printf("The process is being debugged. Unloading debugger...\n", method);
-        if (!DebugActiveProcessStop(GetCurrentProcessId())) {
-            printf("Failed to unload debugger. Error code: %lu\n", GetLastError());
-            return FALSE;
-        }
+        printf("The process is being debugged.\n", method);
     } else {
         printf("The process is not being debugged.\n", method);
     }
