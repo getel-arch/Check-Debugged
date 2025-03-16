@@ -32,6 +32,10 @@ BOOL UsingNtQueryInformationProcess() {
     return debugFlag != 0;
 }
 
+BOOL UsingDebugActiveProcess() {
+    return !DebugActiveProcess(GetCurrentProcessId());
+}
+
 int main(int argc, char* argv[]) {
     if (argc != 2) {
         printf("Usage: %s <method_number>\n", argv[0]);
@@ -40,6 +44,7 @@ int main(int argc, char* argv[]) {
         printf("2 - CheckRemoteDebuggerPresent method\n");
         printf("3 - IsDebuggerPresent method\n");
         printf("4 - NtQueryInformationProcess method\n");
+        printf("5 - DebugActiveProcess method\n");
         return FALSE;
     }
 
@@ -58,6 +63,9 @@ int main(int argc, char* argv[]) {
             break;
         case 4:
             isDebuggerPresent = UsingNtQueryInformationProcess();
+            break;
+        case 5:
+            isDebuggerPresent = UsingDebugActiveProcess();
             break;
         default:
             printf("Invalid method number. Use 1 or 2.\n");
