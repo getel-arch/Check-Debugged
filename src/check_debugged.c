@@ -58,7 +58,13 @@ BOOL UsingCallStackConsecutiveSetjmpEx() {
     stack.AddrStack.Mode = AddrModeFlat;
 
     // Initialize the symbol handler
-    SymInitialize(process, NULL, TRUE);
+    if (!SymInitialize(process, NULL, TRUE)) {
+        printf("SymInitialize failed with error code: %lu\n", GetLastError());
+        return FALSE;
+    }
+
+    // Set symbol options
+    SymSetOptions(SYMOPT_UNDNAME | SYMOPT_DEFERRED_LOADS);
 
     BOOL foundFirst = FALSE;
 
