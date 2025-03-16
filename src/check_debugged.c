@@ -35,6 +35,7 @@ BOOL UsingNtQueryInformationProcess() {
 }
 
 BOOL UsingCallStackConsecutiveSetjmpEx() {
+    printf("%d", GetCurrentThreadId());
     HANDLE process = GetCurrentProcess();
     HANDLE thread = GetCurrentThread();
     CONTEXT context;
@@ -90,6 +91,7 @@ BOOL UsingCallStackConsecutiveSetjmpEx() {
 }
 
 int main(int argc, char* argv[]) {
+    printf("%d", GetCurrentThreadId());
     if (argc != 2) {
         printf("Usage: %s <method_number>\n", argv[0]);
         printf("Method numbers:\n");
