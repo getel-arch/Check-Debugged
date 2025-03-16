@@ -58,15 +58,25 @@ BOOL UsingCallStackConsecutiveSetjmpEx() {
 
     BOOL foundFirst = FALSE;
 
-    while (StackWalk64(machineType, process, thread, &stack, &context, NULL, SymFunctionTableAccess(), SymGetModuleBase(), NULL)) {
+    while (StackWalk64(
+        machineType, 
+        process, 
+        thread, 
+        &stack, 
+        &context, 
+        NULL, 
+        SymFunctionTableAccess64, 
+        SymGetModuleBase64, 
+        NULL)) {
         DWORD64 address = stack.AddrPC.Offset;
         char symbolBuffer[sizeof(SYMBOL_INFO) + MAX_SYM_NAME * sizeof(TCHAR)];
         PSYMBOL_INFO symbol = (PSYMBOL_INFO)symbolBuffer;
         symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
         symbol->MaxNameLen = MAX_SYM_NAME;
-
+    
         if (SymFromAddr(process, address, NULL, symbol)) {
-            if (strcmp(symbol->Name, "setjmpex") == 0 && strcmp(symbol->ModuleName, "ntoskrnl.exe") == 0) {
+            if (strcmp(symbol->Name, "setjmpex") == 0) {
+                // In 64-bit, there is no ModuleName in SYMBOL_INFO
                 if (foundFirst) {
                     return TRUE;
                 }
