@@ -1,7 +1,9 @@
+#include <dbghelp.h>
+#include <stdio.h>
 #include <windows.h>
 #include <winternl.h>
-#include <stdio.h>
 
+#pragma comment(lib, "dbghelp.lib")
 #pragma comment(lib, "ntdll.lib")
 
 // Checks the BeingDebugged flag of the PEB
@@ -32,8 +34,69 @@ BOOL UsingNtQueryInformationProcess() {
     return debugFlag != 0;
 }
 
-BOOL UsingDebugActiveProcess() {
-    return DebugActiveProcess(GetCurrentProcessId());
+BOOL UsingCallStackConsecutiveSetjmpEx() {
+    HANDLE process = GetCurrentProcess();
+    HANDLE thread = GetCurrentThread();
+    CONTEXT context;
+    STACKFRAME64 stack;
+    DWORD machineType;
+
+    ZeroMemory(&context, sizeof(CONTEXT));
+    context.ContextFlags = CONTEXT_FULL;
+    RtlCaptureContext(&context);
+
+    ZeroMemory(&stack, sizeof(STACKFRAME64));
+#ifdef _M_IX86
+    machineType = IMAGE_FILE_MACHINE_I386;
+    stack.AddrPC.Offset = context.Eip;
+    stack.AddrPC.Mode = AddrModeFlat;
+    stack.AddrFrame.Offset = context.Ebp;
+    stack.AddrFrame.Mode = AddrModeFlat;
+    stack.AddrStack.Offset = context.Esp;
+    stack.AddrStack.Mode = AddrModeFlat;
+#elif _M_X64
+    machineType = IMAGE_FILE_MACHINE_AMD64;
+    stack.AddrPC.Offset = context.Rip;
+    stack.AddrPC.Mode = AddrModeFlat;
+    stack.AddrFrame.Offset = context.Rsp;
+    stack.AddrFrame.Mode = AddrModeFlat;
+    stack.AddrStack.Offset = context.Rsp;
+    stack.AddrStack.Mode = AddrModeFlat;
+#elif _M_IA64
+    machineType = IMAGE_FILE_MACHINE_IA64;
+    stack.AddrPC.Offset = context.StIIP;
+    stack.AddrPC.Mode = AddrModeFlat;
+    stack.AddrFrame.Offset = context.IntSp;
+    stack.AddrFrame.Mode = AddrModeFlat;
+    stack.AddrBStore.Offset = context.RsBSP;
+    stack.AddrBStore.Mode = AddrModeFlat;
+    stack.AddrStack.Offset = context.IntSp;
+    stack.AddrStack.Mode = AddrModeFlat;
+#else
+#error "Unsupported platform"
+#endif
+
+    BOOL foundFirst = FALSE;
+
+    while (StackWalk64(machineType, process, thread, &stack, &context, NULL, SymFunctionTableAccess64, SymGetModuleBase64, NULL)) {
+        DWORD64 address = stack.AddrPC.Offset;
+        char symbolBuffer[sizeof(SYMBOL_INFO) + MAX_SYM_NAME * sizeof(TCHAR)];
+        PSYMBOL_INFO symbol = (PSYMBOL_INFO)symbolBuffer;
+        symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
+        symbol->MaxNameLen = MAX_SYM_NAME;
+
+        if (SymFromAddr(process, address, NULL, symbol)) {
+            if (strcmp(symbol->Name, "setjmpex") == 0 && strcmp(symbol->ModuleName, "ntoskrnl.exe") == 0) {
+                if (foundFirst) {
+                    return TRUE;
+                }
+                foundFirst = TRUE;
+            } else {
+                foundFirst = FALSE;
+            }
+        }
+    }
+    return FALSE;
 }
 
 int main(int argc, char* argv[]) {
@@ -44,7 +107,7 @@ int main(int argc, char* argv[]) {
         printf("2 - CheckRemoteDebuggerPresent method\n");
         printf("3 - IsDebuggerPresent method\n");
         printf("4 - NtQueryInformationProcess method\n");
-        printf("5 - DebugActiveProcess method\n");
+        printf("5 - Call Stack Consecutive SetjmpEx method\n");
         return FALSE;
     }
 
@@ -65,7 +128,7 @@ int main(int argc, char* argv[]) {
             isDebuggerPresent = UsingNtQueryInformationProcess();
             break;
         case 5:
-            isDebuggerPresent = UsingDebugActiveProcess();
+            isDebuggerPresent = UsingCallStackConsecutiveSetjmpEx();
             break;
         default:
             printf("Invalid method number. Use 1 or 2.\n");
