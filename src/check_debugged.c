@@ -66,6 +66,9 @@ BOOL UsingCallStackConsecutiveSetjmpEx() {
     // Set symbol options
     SymSetOptions(SYMOPT_UNDNAME | SYMOPT_DEFERRED_LOADS);
 
+    // Set the search path for symbols
+    SymSetSearchPath(process, "C:\\Symbols;http://msdl.microsoft.com/download/symbols");
+
     BOOL foundFirst = FALSE;
 
     while (StackWalk64(
@@ -79,6 +82,12 @@ BOOL UsingCallStackConsecutiveSetjmpEx() {
         SymGetModuleBase64, 
         NULL)) {
         DWORD64 address = stack.AddrPC.Offset;
+        DWORD64 moduleBase = SymGetModuleBase64(process, address);
+        if (moduleBase == 0) {
+            printf("SymGetModuleBase64 failed with error code: %lu\n", GetLastError());
+            continue;
+        }
+
         char symbolBuffer[sizeof(SYMBOL_INFO) + MAX_SYM_NAME * sizeof(TCHAR)];
         PSYMBOL_INFO symbol = (PSYMBOL_INFO)symbolBuffer;
         symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
