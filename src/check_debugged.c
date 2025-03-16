@@ -1,7 +1,7 @@
-#include <dbghelp.h>
 #include <stdio.h>
 #include <windows.h>
 #include <winternl.h>
+#include <dbghelp.h>
 
 #pragma comment(lib, "dbghelp.lib")
 #pragma comment(lib, "ntdll.lib")
