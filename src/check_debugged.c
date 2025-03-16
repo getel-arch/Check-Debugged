@@ -46,39 +46,19 @@ BOOL UsingCallStackConsecutiveSetjmpEx() {
     RtlCaptureContext(&context);
 
     ZeroMemory(&stack, sizeof(STACKFRAME64));
-#ifdef _M_IX86
-    machineType = IMAGE_FILE_MACHINE_I386;
-    stack.AddrPC.Offset = context.Eip;
-    stack.AddrPC.Mode = AddrModeFlat;
-    stack.AddrFrame.Offset = context.Ebp;
-    stack.AddrFrame.Mode = AddrModeFlat;
-    stack.AddrStack.Offset = context.Esp;
-    stack.AddrStack.Mode = AddrModeFlat;
-#elif _M_X64
     machineType = IMAGE_FILE_MACHINE_AMD64;
+
+    // Initialize stack frame for 64-bit architecture
     stack.AddrPC.Offset = context.Rip;
     stack.AddrPC.Mode = AddrModeFlat;
     stack.AddrFrame.Offset = context.Rsp;
     stack.AddrFrame.Mode = AddrModeFlat;
     stack.AddrStack.Offset = context.Rsp;
     stack.AddrStack.Mode = AddrModeFlat;
-#elif _M_IA64
-    machineType = IMAGE_FILE_MACHINE_IA64;
-    stack.AddrPC.Offset = context.StIIP;
-    stack.AddrPC.Mode = AddrModeFlat;
-    stack.AddrFrame.Offset = context.IntSp;
-    stack.AddrFrame.Mode = AddrModeFlat;
-    stack.AddrBStore.Offset = context.RsBSP;
-    stack.AddrBStore.Mode = AddrModeFlat;
-    stack.AddrStack.Offset = context.IntSp;
-    stack.AddrStack.Mode = AddrModeFlat;
-#else
-#error "Unsupported platform"
-#endif
 
     BOOL foundFirst = FALSE;
 
-    while (StackWalk64(machineType, process, thread, &stack, &context, NULL, SymFunctionTableAccess64, SymGetModuleBase64, NULL)) {
+    while (StackWalk64(machineType, process, thread, &stack, &context, NULL, SymFunctionTableAccess64(), SymGetModuleBase64(), NULL)) {
         DWORD64 address = stack.AddrPC.Offset;
         char symbolBuffer[sizeof(SYMBOL_INFO) + MAX_SYM_NAME * sizeof(TCHAR)];
         PSYMBOL_INFO symbol = (PSYMBOL_INFO)symbolBuffer;
