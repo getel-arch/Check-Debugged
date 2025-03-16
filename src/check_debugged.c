@@ -57,6 +57,9 @@ BOOL UsingCallStackConsecutiveSetjmpEx() {
     stack.AddrStack.Offset = context.Rsp;
     stack.AddrStack.Mode = AddrModeFlat;
 
+    // Initialize the symbol handler
+    SymInitialize(process, NULL, TRUE);
+
     BOOL foundFirst = FALSE;
 
     while (StackWalk64(
@@ -75,11 +78,9 @@ BOOL UsingCallStackConsecutiveSetjmpEx() {
         symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
         symbol->MaxNameLen = MAX_SYM_NAME;
 
-        printf("Current Symbol: %s\n", symbol->Name);
-    
         if (SymFromAddr(process, address, NULL, symbol)) {
+            printf("Current Symbol: %s\n", symbol->Name);
             if (strcmp(symbol->Name, "setjmpex") == 0) {
-                // In 64-bit, there is no ModuleName in SYMBOL_INFO
                 if (foundFirst) {
                     return TRUE;
                 }
@@ -87,8 +88,14 @@ BOOL UsingCallStackConsecutiveSetjmpEx() {
             } else {
                 foundFirst = FALSE;
             }
+        } else {
+            printf("SymFromAddr failed with error code: %lu\n", GetLastError());
         }
     }
+
+    // Cleanup the symbol handler
+    SymCleanup(process);
+
     return FALSE;
 }
 
