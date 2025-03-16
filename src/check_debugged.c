@@ -58,7 +58,7 @@ BOOL UsingCallStackConsecutiveSetjmpEx() {
 
     BOOL foundFirst = FALSE;
 
-    while (StackWalk64(machineType, process, thread, &stack, &context, NULL, SymFunctionTableAccess64(), SymGetModuleBase64(), NULL)) {
+    while (StackWalk64(machineType, process, thread, &stack, &context, NULL, SymFunctionTableAccess(), SymGetModuleBase(), NULL)) {
         DWORD64 address = stack.AddrPC.Offset;
         char symbolBuffer[sizeof(SYMBOL_INFO) + MAX_SYM_NAME * sizeof(TCHAR)];
         PSYMBOL_INFO symbol = (PSYMBOL_INFO)symbolBuffer;
