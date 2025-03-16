@@ -65,10 +65,10 @@ int main(int argc, char* argv[]) {
             isDebuggerPresent = UsingIsDebuggerPresent();
             break;
         case 4:
-            isDebuggerPresent = UsingNtQueryInformationProcess();
+            isDebuggerPresent = UsingNtQueryInformationProcessDebugPort();
             break;
         case 5:
-            isDebuggerPresent = UsingCallStackConsecutiveSetjmpEx();
+            isDebuggerPresent = UsingNtQueryInformationProcessDebugFlags();
             break;
         default:
             printf("Invalid method number. Use 1 or 2.\n");
