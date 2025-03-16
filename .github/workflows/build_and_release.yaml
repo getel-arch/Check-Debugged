@@ -23,7 +23,7 @@ jobs:
       run: New-Item -ItemType Directory -Path .\output
 
     - name: Compile 64bit Binary
-      run: gcc .\src\check_debugged.c -o .\output\check_debugged_x64.exe -s -m64 -lntdll -ldbghelp
+      run: gcc .\src\check_debugged.c -o .\output\check_debugged_x64.exe -s -m64 -lntdll
 
     - name: Read Version
       run: |
