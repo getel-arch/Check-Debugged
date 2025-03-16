@@ -1,9 +1,7 @@
 #include <stdio.h>
 #include <windows.h>
 #include <winternl.h>
-#include <dbghelp.h>
 
-#pragma comment(lib, "dbghelp.lib")
 #pragma comment(lib, "ntdll.lib")
 
 // Checks the BeingDebugged flag of the PEB
@@ -28,90 +26,16 @@ BOOL UsingIsDebuggerPresent() {
 
 // Checks using the NtQueryInformationProcess winapi call and passing the ProcessInformationClass 'ProcessDebugPort'
 // which returns nozero value when the process is being debugged by a ring 3 debugger
-BOOL UsingNtQueryInformationProcess() {
+BOOL UsingNtQueryInformationProcessDebugPort() {
     DWORD debugFlag = 0;
     NtQueryInformationProcess(GetCurrentProcess(), ProcessDebugPort, &debugFlag, sizeof(debugFlag), NULL);
     return debugFlag != 0;
 }
 
-BOOL UsingCallStackConsecutiveSetjmpEx() {
-    printf("%d\n", GetCurrentThreadId());
-    HANDLE process = GetCurrentProcess();
-    HANDLE thread = GetCurrentThread();
-    CONTEXT context;
-    STACKFRAME64 stack;
-    DWORD machineType;
-
-    ZeroMemory(&context, sizeof(CONTEXT));
-    context.ContextFlags = CONTEXT_FULL;
-    RtlCaptureContext(&context);
-
-    ZeroMemory(&stack, sizeof(STACKFRAME64));
-    machineType = IMAGE_FILE_MACHINE_AMD64;
-
-    // Initialize stack frame for 64-bit architecture
-    stack.AddrPC.Offset = context.Rip;
-    stack.AddrPC.Mode = AddrModeFlat;
-    stack.AddrFrame.Offset = context.Rsp;
-    stack.AddrFrame.Mode = AddrModeFlat;
-    stack.AddrStack.Offset = context.Rsp;
-    stack.AddrStack.Mode = AddrModeFlat;
-
-    // Initialize the symbol handler
-    if (!SymInitialize(process, NULL, TRUE)) {
-        printf("SymInitialize failed with error code: %lu\n", GetLastError());
-        return FALSE;
-    }
-
-    // Set symbol options
-    SymSetOptions(SYMOPT_UNDNAME | SYMOPT_DEFERRED_LOADS);
-
-    // Set the search path for symbols
-    SymSetSearchPath(process, "C:\\Symbols;http://msdl.microsoft.com/download/symbols");
-
-    BOOL foundFirst = FALSE;
-
-    while (StackWalk64(
-        machineType, 
-        process, 
-        thread, 
-        &stack, 
-        &context, 
-        NULL, 
-        SymFunctionTableAccess64, 
-        SymGetModuleBase64, 
-        NULL)) {
-        DWORD64 address = stack.AddrPC.Offset;
-        DWORD64 moduleBase = SymGetModuleBase64(process, address);
-        if (moduleBase == 0) {
-            printf("SymGetModuleBase64 failed with error code: %lu\n", GetLastError());
-            continue;
-        }
-
-        char symbolBuffer[sizeof(SYMBOL_INFO) + MAX_SYM_NAME * sizeof(TCHAR)];
-        PSYMBOL_INFO symbol = (PSYMBOL_INFO)symbolBuffer;
-        symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
-        symbol->MaxNameLen = MAX_SYM_NAME;
-
-        if (SymFromAddr(process, address, NULL, symbol)) {
-            printf("Current Symbol: %s\n", symbol->Name);
-            if (strcmp(symbol->Name, "setjmpex") == 0) {
-                if (foundFirst) {
-                    return TRUE;
-                }
-                foundFirst = TRUE;
-            } else {
-                foundFirst = FALSE;
-            }
-        } else {
-            printf("SymFromAddr failed with error code: %lu\n", GetLastError());
-        }
-    }
-
-    // Cleanup the symbol handler
-    SymCleanup(process);
-
-    return FALSE;
+BOOL UsingNtQueryInformationProcessDebugFlags() {
+    DWORD debugFlag = 0;
+    NtQueryInformationProcess(GetCurrentProcess(), ProcessDebugFlags, &debugFlag, sizeof(debugFlag), NULL);
+    return debugFlag == 0;
 }
 
 int main(int argc, char* argv[]) {
@@ -122,8 +46,8 @@ int main(int argc, char* argv[]) {
         printf("1 - PEB method\n");
         printf("2 - CheckRemoteDebuggerPresent method\n");
         printf("3 - IsDebuggerPresent method\n");
-        printf("4 - NtQueryInformationProcess method\n");
-        printf("5 - Call Stack Consecutive SetjmpEx method\n");
+        printf("4 - NtQueryInformationProcess ProcessDebugPort method\n");
+        printf("5 - NtQueryInformationProcess ProcessDebugFlags method\n");
         return FALSE;
     }
 
