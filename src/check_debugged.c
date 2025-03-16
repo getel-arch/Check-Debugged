@@ -35,7 +35,7 @@ BOOL UsingNtQueryInformationProcess() {
 }
 
 BOOL UsingCallStackConsecutiveSetjmpEx() {
-    printf("%d", GetCurrentThreadId());
+    printf("%d\n", GetCurrentThreadId());
     HANDLE process = GetCurrentProcess();
     HANDLE thread = GetCurrentThread();
     CONTEXT context;
@@ -74,6 +74,8 @@ BOOL UsingCallStackConsecutiveSetjmpEx() {
         PSYMBOL_INFO symbol = (PSYMBOL_INFO)symbolBuffer;
         symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
         symbol->MaxNameLen = MAX_SYM_NAME;
+
+        printf("Current Symbol: %s\n", symbol->Name);
     
         if (SymFromAddr(process, address, NULL, symbol)) {
             if (strcmp(symbol->Name, "setjmpex") == 0) {
@@ -91,7 +93,7 @@ BOOL UsingCallStackConsecutiveSetjmpEx() {
 }
 
 int main(int argc, char* argv[]) {
-    printf("%d", GetCurrentThreadId());
+    printf("%d\n", GetCurrentThreadId());
     if (argc != 2) {
         printf("Usage: %s <method_number>\n", argv[0]);
         printf("Method numbers:\n");
